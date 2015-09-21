@@ -6,20 +6,25 @@
 import psycopg2
 
 # Set default match identification
-DEFAULT_TOURNAMENT_ID = 1
+DEFAULT_TOURNAMENT_ID = 0
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
     return psycopg2.connect("dbname=tournament")
 
 
-def deleteMatches():
+def deleteMatches(t_id=None):
     """Remove all the match records from the database."""
+    # Initialize tournament id
+    if(t_id):
+        tournament_id = t_id
+    else:
+        tournament_id = DEFAULT_TOURNAMENT_ID
+    # Delete the selected match data
     db = connect()
     c = db.cursor()
     c.execute('DELETE FROM tournaments WHERE id = %s',
-              (DEFAULT_TOURNAMENT_ID,))
-    #c.execute('DELETE FROM tournaments')
+              (tournament_id,))
     db.commit()
     db.close()
 
@@ -43,7 +48,7 @@ def countPlayers():
     return result[0]
 
 
-def registerPlayer(name):
+def registerPlayer(name, t_id=None):
     """Adds a player to the tournament database.
   
     The database assigns a unique serial id number for the player.  (This
@@ -55,9 +60,12 @@ def registerPlayer(name):
 
     db = connect()
     c = db.cursor()
-    c.execute('INSERT INTO players (name) VALUES (%s);'
-              '',
-              (name, DEFAULT_TOURNAMENT_ID, name,))
+    # Insert name into the player table and get the player id
+    c.execute('INSERT INTO players (name) VALUES (%s) RETURNING id',
+              (name,))
+    # Initialize the tournament table with the player id
+    c.execute('INSERT INTO tournaments VALUES (%s, %s, 0, 0)',
+              (DEFAULT_TOURNAMENT_ID, c.fetchone()[0],))
     db.commit()
     db.close()
 
@@ -84,7 +92,7 @@ def playerStandings():
     db.close()
     return result
 
-def reportMatch(winner, loser):
+def reportMatch(winner, loser, draw=False):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -112,4 +120,10 @@ def swissPairings():
         name2: the second player's name
     """
 
-
+def showTables():
+    db = connect()
+    c = db.cursor()
+    c.execute('SELECT * FROM players a '
+              'LEFT JOIN tournaments b ON a.id = player')
+    for result in c.fetchall():
+        print(result)
