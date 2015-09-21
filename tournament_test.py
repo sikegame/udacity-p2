@@ -49,6 +49,7 @@ def testRegisterCountDelete():
     if c != 4:
         raise ValueError(
             "After registering four players, countPlayers should be 4.")
+    deleteMatches() # I added this
     deletePlayers()
     c = countPlayers()
     if c != 0:
