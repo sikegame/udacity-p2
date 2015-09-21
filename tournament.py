@@ -6,7 +6,7 @@
 import psycopg2
 
 # Set default match identification
-DEFAULT_MATCH_ID = 1
+DEFAULT_TOURNAMENT_ID = 1
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
@@ -17,8 +17,10 @@ def deleteMatches():
     """Remove all the match records from the database."""
     db = connect()
     c = db.cursor()
-    #c.execute('DELETE FROM matches WHERE id = %s', (DEFAULT_MATCH_ID,))
-    c.execute('DELETE FROM matches')
+    c.execute('DELETE FROM tournaments WHERE id = %s',
+              (DEFAULT_TOURNAMENT_ID,))
+    #c.execute('DELETE FROM tournaments')
+    db.commit()
     db.close()
 
 
@@ -27,6 +29,7 @@ def deletePlayers():
     db = connect()
     c = db.cursor()
     c.execute('DELETE FROM players')
+    db.commit()
     db.close()
 
 
@@ -35,9 +38,9 @@ def countPlayers():
     db = connect()
     c = db.cursor()
     c.execute('SELECT COUNT (*) FROM players')
-    result = c.fetchall()
+    result = c.fetchone()
     db.close()
-    return result
+    return result[0]
 
 
 def registerPlayer(name):
@@ -52,7 +55,9 @@ def registerPlayer(name):
 
     db = connect()
     c = db.cursor()
-    c.execute('INSERT INTO players (name) VALUES (%s)', (name,))
+    c.execute('INSERT INTO players (name) VALUES (%s);'
+              '',
+              (name, DEFAULT_TOURNAMENT_ID, name,))
     db.commit()
     db.close()
 
@@ -70,7 +75,14 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-
+    db = connect()
+    c = db.cursor()
+    c.execute('SELECT a.id, name, wins, matches FROM players a '
+              'LEFT JOIN tournaments b ON a.id = player '
+              'ORDER BY wins DESC')
+    result = c.fetchall()
+    db.close()
+    return result
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
@@ -79,6 +91,9 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
+    db = connect()
+    c = db.cursor()
+    c.execute()
  
  
 def swissPairings():

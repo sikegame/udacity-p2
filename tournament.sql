@@ -11,7 +11,10 @@ CREATE DATABASE tournament;
 CREATE TABLE IF NOT EXISTS
   players (id SERIAL PRIMARY KEY, name TEXT);
 CREATE TABLE IF NOT EXISTS
-  matches (id INTEGER, player SERIAL REFERENCES players(id), win INTEGER);
+  tournaments (
+    id INTEGER, player SERIAL REFERENCES players(id),
+    wins INTEGER, matches INTEGER
+  );
 
 INSERT INTO players (name) VALUES ('Shinsuke Ikegame');
 INSERT INTO players (name) VALUES ('Teppei Aoyama');
