@@ -5,6 +5,8 @@
 
 import psycopg2
 
+# Set default match identification
+DEFAULT_MATCH_ID = 1
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
@@ -13,14 +15,29 @@ def connect():
 
 def deleteMatches():
     """Remove all the match records from the database."""
+    db = connect()
+    c = db.cursor()
+    #c.execute('DELETE FROM matches WHERE id = %s', (DEFAULT_MATCH_ID,))
+    c.execute('DELETE FROM matches')
+    db.close()
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
+    db = connect()
+    c = db.cursor()
+    c.execute('DELETE FROM players')
+    db.close()
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
+    db = connect()
+    c = db.cursor()
+    c.execute('SELECT COUNT (*) FROM players')
+    result = c.fetchall()
+    db.close()
+    return result
 
 
 def registerPlayer(name):
@@ -32,6 +49,12 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
+
+    db = connect()
+    c = db.cursor()
+    c.execute('INSERT INTO players (name) VALUES (%s)', (name,))
+    db.commit()
+    db.close()
 
 
 def playerStandings():
