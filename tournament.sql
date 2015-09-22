@@ -16,5 +16,7 @@ CREATE TABLE IF NOT EXISTS
     wins INTEGER, matches INTEGER
   );
 
-INSERT INTO players (name) VALUES ('Shinsuke Ikegame');
-INSERT INTO players (name) VALUES ('Teppei Aoyama');
+CREATE VIEW ranking AS
+  SELECT a.id as player_id, name as player_name, wins, matches
+  FROM players a LEFT JOIN tournaments b ON a.id = player
+  ORDER BY wins DESC;

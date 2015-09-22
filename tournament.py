@@ -42,10 +42,10 @@ def countPlayers():
     """Returns the number of players currently registered."""
     db = connect()
     c = db.cursor()
-    c.execute('SELECT COUNT (*) FROM players')
-    result = c.fetchone()
+    c.execute('SELECT COUNT(*) FROM players')
+    result = c.fetchone()[0]
     db.close()
-    return result[0]
+    return result
 
 
 def registerPlayer(name, t_id=None):
@@ -85,9 +85,7 @@ def playerStandings():
     """
     db = connect()
     c = db.cursor()
-    c.execute('SELECT a.id, name, wins, matches FROM players a '
-              'LEFT JOIN tournaments b ON a.id = player '
-              'ORDER BY wins DESC')
+    c.execute('SELECT player_id, player_name, wins, matches FROM ranking')
     result = c.fetchall()
     db.close()
     return result
@@ -101,7 +99,17 @@ def reportMatch(winner, loser, draw=False):
     """
     db = connect()
     c = db.cursor()
-    c.execute()
+    c.execute('UPDATE tournaments SET wins = '
+              '(SELECT wins FROM tournaments WHERE player = %s) + 1, '
+              'matches = '
+              '(SELECT matches FROM tournaments WHERE player = %s) + 1 '
+              'WHERE player = %s;'
+              'UPDATE tournaments SET matches = '
+              '(SELECT matches FROM tournaments WHERE player = %s) + 1 '
+              'WHERE  player = %s;',
+              (winner, winner, winner, loser, loser, ))
+    db.commit()
+    db.close()
  
  
 def swissPairings():
@@ -120,10 +128,20 @@ def swissPairings():
         name2: the second player's name
     """
 
-def showTables():
+    pairs = []
+    temp_pair = ()
+
     db = connect()
     c = db.cursor()
-    c.execute('SELECT * FROM players a '
-              'LEFT JOIN tournaments b ON a.id = player')
-    for result in c.fetchall():
-        print(result)
+    # Get player_id and player_name list sorted by wins
+    c.execute('SELECT player_id, player_name FROM ranking')
+    result = c.fetchall()
+    db.close()
+
+    # Match pairs from top to bottom
+    for i in result:
+        temp_pair += (i[0], i[1])
+        if len(temp_pair) == 4:
+            pairs.append(temp_pair)  # Append to pairs array
+            temp_pair = ()  # Reset temp_pair tuple
+    return pairs
