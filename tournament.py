@@ -5,26 +5,18 @@
 
 import psycopg2
 
-# Set default match identification
-DEFAULT_TOURNAMENT_ID = 0
-
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
     return psycopg2.connect("dbname=tournament")
 
 
-def deleteMatches(t_id=None):
+def deleteMatches(t_id=0):
     """Remove all the match records from the database."""
-    # Initialize tournament id
-    if(t_id):
-        tournament_id = t_id
-    else:
-        tournament_id = DEFAULT_TOURNAMENT_ID
     # Delete the selected match data
     db = connect()
     c = db.cursor()
     c.execute('DELETE FROM tournaments WHERE id = %s',
-              (tournament_id,))
+              (t_id,))
     db.commit()
     db.close()
 
@@ -48,7 +40,7 @@ def countPlayers():
     return result
 
 
-def registerPlayer(name, t_id=None):
+def registerPlayer(name, t_id=0):
     """Adds a player to the tournament database.
   
     The database assigns a unique serial id number for the player.  (This
@@ -62,10 +54,10 @@ def registerPlayer(name, t_id=None):
     c = db.cursor()
     # Insert name into the player table and get the player id
     c.execute('INSERT INTO players (name) VALUES (%s) RETURNING id',
-              (name,))
+              (name, ))
     # Initialize the tournament table with the player id
-    c.execute('INSERT INTO tournaments VALUES (%s, %s, 0, 0)',
-              (DEFAULT_TOURNAMENT_ID, c.fetchone()[0],))
+    c.execute('INSERT INTO tournaments VALUES (%s, %s, 0, 0, false)',
+              (t_id, c.fetchone()[0], ))
     db.commit()
     db.close()
 
@@ -134,7 +126,7 @@ def swissPairings():
     db = connect()
     c = db.cursor()
     # Get player_id and player_name list sorted by wins
-    c.execute('SELECT player_id, player_name FROM ranking')
+    c.execute('SELECT player_id, player_name, bye FROM ranking')
     result = c.fetchall()
     db.close()
 
@@ -144,4 +136,8 @@ def swissPairings():
         if len(temp_pair) == 4:
             pairs.append(temp_pair)  # Append to pairs array
             temp_pair = ()  # Reset temp_pair tuple
+
+    if len(temp_pair) == 2:
+        pairs.append(temp_pair)
+
     return pairs
