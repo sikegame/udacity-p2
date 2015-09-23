@@ -11,14 +11,24 @@ CREATE DATABASE tournament;
 \c tournament;
 
 CREATE TABLE IF NOT EXISTS
-  players (id SERIAL PRIMARY KEY, name TEXT);
+  players (
+    p_id SERIAL PRIMARY KEY,
+    p_name TEXT
+  );
+
 CREATE TABLE IF NOT EXISTS
   tournaments (
-    id INTEGER, player SERIAL REFERENCES players(id),
-    wins INTEGER, matches INTEGER, bye BOOLEAN
+    player INTEGER REFERENCES players(p_id),
+    opponent INTEGER REFERENCES players(p_id),
+    winner BOOLEAN
   );
 
 CREATE VIEW ranking AS
-  SELECT a.id as player_id, name as player_name, wins, matches, bye
-  FROM players a LEFT JOIN tournaments b ON a.id = player
+  SELECT
+    p_id as player_id,
+    p_name as player_name,
+    COUNT (CASE WHEN winner THEN 1 ELSE NULL END) as wins,
+    COUNT (player) as matches
+  FROM players LEFT JOIN tournaments ON p_id = player
+  GROUP BY p_id, p_name
   ORDER BY wins DESC;

@@ -10,13 +10,12 @@ def connect():
     return psycopg2.connect("dbname=tournament")
 
 
-def deleteMatches(t_id=0):
+def deleteMatches():
     """Remove all the match records from the database."""
     # Delete the selected match data
     db = connect()
     c = db.cursor()
-    c.execute('DELETE FROM tournaments WHERE id = %s',
-              (t_id,))
+    c.execute('DELETE FROM tournaments')
     db.commit()
     db.close()
 
@@ -34,13 +33,13 @@ def countPlayers():
     """Returns the number of players currently registered."""
     db = connect()
     c = db.cursor()
-    c.execute('SELECT COUNT(*) FROM players')
+    c.execute('SELECT COUNT (*) FROM players')
     result = c.fetchone()[0]
     db.close()
     return result
 
 
-def registerPlayer(name, t_id=0):
+def registerPlayer(name):
     """Adds a player to the tournament database.
   
     The database assigns a unique serial id number for the player.  (This
@@ -48,16 +47,14 @@ def registerPlayer(name, t_id=0):
   
     Args:
       name: the player's full name (need not be unique).
+      t_id (optional): the tournament id
     """
 
     db = connect()
     c = db.cursor()
-    # Insert name into the player table and get the player id
-    c.execute('INSERT INTO players (name) VALUES (%s) RETURNING id',
+    # Register the player and initialize the tournaments table
+    c.execute('INSERT INTO players (p_name) VALUES (%s)',
               (name, ))
-    # Initialize the tournament table with the player id
-    c.execute('INSERT INTO tournaments VALUES (%s, %s, 0, 0, false)',
-              (t_id, c.fetchone()[0], ))
     db.commit()
     db.close()
 
@@ -77,10 +74,12 @@ def playerStandings():
     """
     db = connect()
     c = db.cursor()
-    c.execute('SELECT player_id, player_name, wins, matches FROM ranking')
+    c.execute('SELECT player_id, player_name, wins, matches '
+              'FROM ranking')
     result = c.fetchall()
     db.close()
     return result
+
 
 def reportMatch(winner, loser, draw=False):
     """Records the outcome of a single match between two players.
@@ -91,15 +90,11 @@ def reportMatch(winner, loser, draw=False):
     """
     db = connect()
     c = db.cursor()
-    c.execute('UPDATE tournaments SET wins = '
-              '(SELECT wins FROM tournaments WHERE player = %s) + 1, '
-              'matches = '
-              '(SELECT matches FROM tournaments WHERE player = %s) + 1 '
-              'WHERE player = %s;'
-              'UPDATE tournaments SET matches = '
-              '(SELECT matches FROM tournaments WHERE player = %s) + 1 '
-              'WHERE  player = %s;',
-              (winner, winner, winner, loser, loser, ))
+    c.execute('INSERT INTO tournaments VALUES '
+              '(%s, %s, %s), '
+              '(%s, %s, %s)',
+              (winner, loser, not draw,
+               loser, winner, False, ))
     db.commit()
     db.close()
  
@@ -119,25 +114,26 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-
-    pairs = []
-    temp_pair = ()
-
     db = connect()
     c = db.cursor()
     # Get player_id and player_name list sorted by wins
-    c.execute('SELECT player_id, player_name, bye FROM ranking')
+    c.execute('SELECT player_id, player_name FROM ranking')
     result = c.fetchall()
     db.close()
+    return pairMatchEngine(result)
+
+
+def pairMatchEngine(players):
+    pairs = []
+    temp_pair = ()
 
     # Match pairs from top to bottom
-    for i in result:
-        temp_pair += (i[0], i[1])
+    for p in players:
+        temp_pair += (p[0], p[1])
         if len(temp_pair) == 4:
             pairs.append(temp_pair)  # Append to pairs array
             temp_pair = ()  # Reset temp_pair tuple
 
     if len(temp_pair) == 2:
         pairs.append(temp_pair)
-
     return pairs
