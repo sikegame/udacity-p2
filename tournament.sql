@@ -42,4 +42,5 @@ CREATE VIEW bye_player AS
       player,
       COUNT (CASE WHEN opponent IS NULL THEN 1 ELSE NULL END ) AS bye
     FROM tournaments GROUP BY player
-  ) a WHERE bye = 0 LIMIT 1;
+  ) a
+  WHERE bye = 0 LIMIT 1;

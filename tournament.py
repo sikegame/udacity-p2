@@ -111,55 +111,49 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    pairs = []
+    # Set a bye player if countPlayers() returns odd number
+    # and remove the bye player from pair matching
+    q = ''
+    if countPlayers() % 2 != 0:
+        q = ' WHERE id != ' + str(setByePlayer())
 
     db = connect()
     c = db.cursor()
     # Get player_id and player_name list sorted by wins
-    for i in range(0, countPlayers(), 2):
-        c.execute('SELECT id, name FROM player_ranking '
-                  'LIMIT 2 OFFSET %s',
-                  (i, ))
-        temp = ()
-        for p in c.fetchall():
-            temp += (p[0], p[1])
-            pairs.append(temp)
+    c.execute('SELECT id, name FROM player_ranking' + q)
+    result = c.fetchall()
     db.close()
-    print(pairs)
-    #return matchingEngine(result)
+    return matchingPairs(result)
 
 
-def matchingEngine(players):
+def matchingPairs(players):
+    '''
+
+    :param players: take the even number of players
+    :return: array containing paired players
+    '''
     pairs = []
-    temp_pair = ()
+    temp = ()
 
     # Match pairs from top to bottom
     for p in players:
-        temp_pair += (p[0], p[1])
-        if len(temp_pair) == 4:
-            pairs.append(temp_pair)  # Append to pairs array
-            temp_pair = ()  # Reset temp_pair tuple
-
-    if len(temp_pair) == 2:
-        pairs.append(temp_pair)
+        temp += (p[0], p[1])
+        if len(temp) == 4:
+            pairs.append(temp)  # Append to pairs array
+            temp = ()  # Reset temp tuple
     return pairs
 
 
 def setByePlayer():
-    return 0
-
-
-def checkRematch(id1, id2):
+    '''
+    :return: the current bye player id
+    '''
     db = connect()
     c = db.cursor()
-    c.execute('SELECT '
-              'COUNT (CASE WHEN opponent = %s THEN 1 ELSE NULL END) '
-              'FROM tournaments WHERE player = %s',
-              (id2, id1, ))
+    c.execute('INSERT INTO tournaments (player, winner) '
+              'VALUES ((SELECT * FROM bye_player), TRUE ) '
+              'RETURNING player')
     result = c.fetchone()[0]
+    db.commit()
     db.close()
-
-    if result > 0:
-        return True
-    else:
-        return False
+    return result
