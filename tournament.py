@@ -12,7 +12,6 @@ def connect():
 
 def deleteMatches():
     """Remove all the match records from the database."""
-    # Delete the selected match data
     db = connect()
     c = db.cursor()
     c.execute('DELETE FROM tournaments')
@@ -47,13 +46,11 @@ def registerPlayer(name):
   
     Args:
       name: the player's full name (need not be unique).
-      t_id (optional): the tournament id
     """
 
     db = connect()
     c = db.cursor()
-    # Register the player and initialize the tournaments table
-    c.execute('INSERT INTO players (p_name) VALUES (%s)',
+    c.execute('INSERT INTO players (name) VALUES (%s)',
               (name, ))
     db.commit()
     db.close()
@@ -74,8 +71,7 @@ def playerStandings():
     """
     db = connect()
     c = db.cursor()
-    c.execute('SELECT player_id, player_name, wins, matches '
-              'FROM ranking')
+    c.execute('SELECT id, name, wins, matches FROM player_ranking')
     result = c.fetchall()
     db.close()
     return result
@@ -87,6 +83,7 @@ def reportMatch(winner, loser, draw=False):
     Args:
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
+      draw (Optional): if the game result was draw, set True
     """
     db = connect()
     c = db.cursor()
@@ -114,16 +111,25 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    pairs = []
+
     db = connect()
     c = db.cursor()
     # Get player_id and player_name list sorted by wins
-    c.execute('SELECT player_id, player_name FROM ranking')
-    result = c.fetchall()
+    for i in range(0, countPlayers(), 2):
+        c.execute('SELECT id, name FROM player_ranking '
+                  'LIMIT 2 OFFSET %s',
+                  (i, ))
+        temp = ()
+        for p in c.fetchall():
+            temp += (p[0], p[1])
+            pairs.append(temp)
     db.close()
-    return pairMatchEngine(result)
+    print(pairs)
+    #return matchingEngine(result)
 
 
-def pairMatchEngine(players):
+def matchingEngine(players):
     pairs = []
     temp_pair = ()
 
@@ -137,3 +143,23 @@ def pairMatchEngine(players):
     if len(temp_pair) == 2:
         pairs.append(temp_pair)
     return pairs
+
+
+def setByePlayer():
+    return 0
+
+
+def checkRematch(id1, id2):
+    db = connect()
+    c = db.cursor()
+    c.execute('SELECT '
+              'COUNT (CASE WHEN opponent = %s THEN 1 ELSE NULL END) '
+              'FROM tournaments WHERE player = %s',
+              (id2, id1, ))
+    result = c.fetchone()[0]
+    db.close()
+
+    if result > 0:
+        return True
+    else:
+        return False
