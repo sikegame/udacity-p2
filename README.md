@@ -2,12 +2,12 @@
 
 ## Synopsis
 
-This Python module provides the swiss tournament pair matching functions to your app. Simply import this module, and you are good to go!
+This Python module provides the swiss tournament pair matching solutions to your application. Simply import this module, and you are good to go!
 
 ## Requirements
 
 - Python 2.7 or newer
-- Your own Python app
+- Your own Python application
 
 ## Installation
 
