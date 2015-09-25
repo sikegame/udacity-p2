@@ -90,8 +90,8 @@ def reportMatch(winner, loser, draw=False):
     c.execute('INSERT INTO tournaments VALUES '
               '(%s, %s, %s), '
               '(%s, %s, %s)',
-              (winner, loser, not draw,
-               loser, winner, False, ))
+              (winner, loser, not draw,  # Insert the winner info
+               loser, winner, False, ))  # Insert the loser into
     db.commit()
     db.close()
  
@@ -112,7 +112,7 @@ def swissPairings():
         name2: the second player's name
     """
     # Set a bye player if countPlayers() returns odd number
-    # and remove the bye player from pair matching
+    # and remove the bye player from pair matching selection
     q = ''
     if countPlayers() % 2 != 0:
         q = ' WHERE id != ' + str(setByePlayer())
@@ -127,11 +127,9 @@ def swissPairings():
 
 
 def matchingPairs(players):
-    '''
-
-    :param players: take the even number of players
-    :return: array containing paired players
-    '''
+    """ Takes a list of available players sorted by wins and
+    returns a list of pairs of players.
+    """
     pairs = []
     temp = ()
 
@@ -145,9 +143,8 @@ def matchingPairs(players):
 
 
 def setByePlayer():
-    '''
-    :return: the current bye player id
-    '''
+    """ Sets a bye player and returns the current bye player id.
+    """
     db = connect()
     c = db.cursor()
     c.execute('INSERT INTO tournaments (player, winner) '
