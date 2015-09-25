@@ -12,7 +12,7 @@ This Python module provides the swiss tournament pair matching solutions to your
 ## Installation
 
 1. Install the Python 2.7 or newer
-2. Import tournament.py in your Python app.
+2. Import tournament.py in your Python application.
 3. For the usage, please refer to the API reference below.
 
 ## API Reference
