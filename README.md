@@ -15,6 +15,5 @@ This Python app
 
 ## API Reference
 
-`tournament.deleteMatches()`
-
+```tournament.deleteMatches()```
 Remove all the match records from the database.
