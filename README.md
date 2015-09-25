@@ -1,7 +1,19 @@
 <h1>Swiss Tournament Pair Matching</h1>
 
-<h3>Requirements</h3>
+## Synopsis
+
+This Python app 
+
+## Requirements
 
 - Python 2.7 or newer
 
-<h3>Installation</h3>
+## Installation
+
+1. Install the Python 2.7 or newer
+2. 
+
+## API Reference
+
+`tournament.deleteMatches()`
+Remove all the match records from the database.
