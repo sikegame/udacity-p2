@@ -10,12 +10,14 @@ CREATE DATABASE tournament;
 
 \c tournament;
 
+-- Creates a table containing player information
 CREATE TABLE IF NOT EXISTS
   players (
     id SERIAL PRIMARY KEY,
     name TEXT
   );
 
+-- Creates a table containing tournament results
 CREATE TABLE IF NOT EXISTS
   tournaments (
     player INTEGER REFERENCES players(id),
@@ -24,6 +26,7 @@ CREATE TABLE IF NOT EXISTS
     CONSTRAINT no_rematch UNIQUE (player, opponent)
   );
 
+-- Returns a list of players on the order of the number of total win
 CREATE VIEW player_ranking AS
   SELECT
     id,
@@ -34,6 +37,7 @@ CREATE VIEW player_ranking AS
   GROUP BY id, name
   ORDER BY wins DESC;
 
+-- Returns the next available bye candidate
 CREATE VIEW bye_player AS
   SELECT
     player
