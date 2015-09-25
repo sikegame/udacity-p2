@@ -10,25 +10,41 @@ CREATE DATABASE tournament;
 
 \c tournament;
 
+-- Creates a table containing player information
 CREATE TABLE IF NOT EXISTS
   players (
-    p_id SERIAL PRIMARY KEY,
-    p_name TEXT
+    id SERIAL PRIMARY KEY,
+    name TEXT
   );
 
+-- Creates a table containing tournament results
 CREATE TABLE IF NOT EXISTS
   tournaments (
-    player INTEGER REFERENCES players(p_id),
-    opponent INTEGER REFERENCES players(p_id),
-    winner BOOLEAN
+    player INTEGER REFERENCES players(id),
+    opponent INTEGER REFERENCES players(id),
+    winner BOOLEAN,
+    CONSTRAINT no_rematch UNIQUE (player, opponent)
   );
 
-CREATE VIEW ranking AS
+-- Returns a list of players on the order of the number of total win
+CREATE VIEW player_ranking AS
   SELECT
-    p_id as player_id,
-    p_name as player_name,
-    COUNT (CASE WHEN winner THEN 1 ELSE NULL END) as wins,
+    id,
+    name,
+    COUNT (CASE WHEN winner THEN 1 ELSE NULL END ) as wins,
     COUNT (player) as matches
-  FROM players LEFT JOIN tournaments ON p_id = player
-  GROUP BY p_id, p_name
+  FROM players LEFT JOIN tournaments ON id = player
+  GROUP BY id, name
   ORDER BY wins DESC;
+
+-- Returns the next available bye candidate
+CREATE VIEW bye_player AS
+  SELECT
+    player
+  FROM (
+    SELECT
+      player,
+      COUNT (CASE WHEN opponent IS NULL THEN 1 ELSE NULL END ) AS bye
+    FROM tournaments GROUP BY player
+  ) a
+  WHERE bye = 0 LIMIT 1;
