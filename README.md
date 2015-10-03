@@ -7,13 +7,17 @@ This Python module provides the swiss tournament pair matching solutions to your
 ## Requirements
 
 - Python 2.7 or newer
+- Postgress SQL
 - Your own Python application
 
 ## Installation
 
-1. Install the Python 2.7 or newer
-2. Import tournament.py in your Python application.
-3. For the usage, please refer to the API reference below.
+1. Install Python 2.7 or newer.
+2. Install Postgres SQL.
+3. Move to the location of the folder containing this app.
+4. Run `psql -c "\i tournament.sql"` from your command line.
+5. Import tournament.py in your Python application.
+6. For the usage, please refer to the API reference below.
 
 ## API Reference
 
