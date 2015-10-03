@@ -3,6 +3,7 @@
 #
 
 import psycopg2
+from contextlib import contextmanager
 
 
 def connect():
@@ -10,31 +11,38 @@ def connect():
     return psycopg2.connect("dbname=tournament")
 
 
-def deleteMatches():
-    """Remove all the match records from the database."""
+@contextmanager
+def get_cursor():
+    """Decorates frequently used database cursor code."""
     db = connect()
     c = db.cursor()
-    c.execute('DELETE FROM tournaments')
-    db.commit()
-    db.close()
+    try:
+        yield c
+    except:
+        raise
+    else:
+        db.commit()
+    finally:
+        db.close()
+
+
+def deleteMatches():
+    """Remove all the match records from the database."""
+    with get_cursor() as c:
+        c.execute('DELETE FROM tournaments')
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
-    db = connect()
-    c = db.cursor()
-    c.execute('DELETE FROM players')
-    db.commit()
-    db.close()
+    with get_cursor() as c:
+        c.execute('DELETE FROM players')
 
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    db = connect()
-    c = db.cursor()
-    c.execute('SELECT COUNT (*) FROM players')
-    result = c.fetchone()[0]
-    db.close()
+    with get_cursor() as c:
+        c.execute('SELECT COUNT (*) FROM players')
+        result = c.fetchone()[0]
     return result
 
 
@@ -47,13 +55,9 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-
-    db = connect()
-    c = db.cursor()
-    c.execute('INSERT INTO players (name) VALUES (%s)',
-              (name, ))
-    db.commit()
-    db.close()
+    with get_cursor() as c:
+        c.execute('INSERT INTO players (name) VALUES (%s)',
+                  (name, ))
 
 
 def playerStandings():
@@ -69,11 +73,9 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    db = connect()
-    c = db.cursor()
-    c.execute('SELECT id, name, wins, matches FROM player_ranking')
-    result = c.fetchall()
-    db.close()
+    with get_cursor() as c:
+        c.execute('SELECT id, name, wins, matches FROM player_ranking')
+        result = c.fetchall()
     return result
 
 
@@ -85,21 +87,18 @@ def reportMatch(winner, loser, draw=False):
       loser:  the id number of the player who lost
       draw (Optional): if the game result was draw, set True
     """
-    db = connect()
-    c = db.cursor()
-    c.execute('INSERT INTO tournaments VALUES '
-              '(%s, %s, %s), '
-              '(%s, %s, %s)',
-              (winner, loser, not draw,  # Insert the winner info
-               loser, winner, False, ))  # Insert the loser into
-    db.commit()
-    db.close()
+    with get_cursor() as c:
+        c.execute('INSERT INTO tournaments VALUES '
+                  '(%s, %s, %s), '
+                  '(%s, %s, %s)',
+                  (winner, loser, not draw,  # Insert the winner info
+                   loser, winner, False, ))  # Insert the loser into
 
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
 
-    Assuming that there are an even number of players registered, each player
+    This modified version of code takes both an even and odd number of players and each player
     appears exactly once in the pairings.  Each player is paired with another
     player with an equal or nearly-equal win record, that is, a player adjacent
     to him or her in the standings.
@@ -111,28 +110,25 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
-    # Set a bye player if countPlayers() returns odd number
-    # and remove the bye player from pair matching selection
-    q = ''
-    if countPlayers() % 2 != 0:
-        q = ' WHERE id != ' + str(setByePlayer())
-
-    db = connect()
-    c = db.cursor()
-    # Get player_id and player_name list sorted by wins
-    c.execute('SELECT id, name FROM player_ranking' + q)
-    result = c.fetchall()
-    db.close()
+    with get_cursor() as c:
+        if countPlayers() % 2 == 0:
+            # Get player_id and player_name list sorted by wins
+            c.execute('SELECT id, name FROM player_ranking')
+        else:
+            # Set a bye player if countPlayers() returns odd number
+            # and remove the bye player from pair matching selection
+            c.execute('SELECT id, name FROM player_ranking'
+                      'WHERE id != %s', (setByePlayer(), ))
+        result = c.fetchall()
     return matchingPairs(result)
 
 
 def matchingPairs(players):
     """ Takes a list of available players sorted by wins and
-    returns a list of pairs of players.
+    returns a list of paired players.
     """
     pairs = []
     temp = ()
-
     # Match pairs from top to bottom
     for p in players:
         temp += (p[0], p[1])
@@ -143,14 +139,10 @@ def matchingPairs(players):
 
 
 def setByePlayer():
-    """ Sets a bye player and returns the current bye player id.
-    """
-    db = connect()
-    c = db.cursor()
-    c.execute('INSERT INTO tournaments (player, winner) '
-              'VALUES ((SELECT * FROM bye_player), TRUE ) '
-              'RETURNING player')
-    result = c.fetchone()[0]
-    db.commit()
-    db.close()
+    """ Sets a bye player and returns the current bye player id."""
+    with get_cursor() as c:
+        c.execute('INSERT INTO tournaments (player, winner) '
+                  'VALUES ((SELECT * FROM bye_player), TRUE ) '
+                  'RETURNING player')
+        result = c.fetchone()[0]
     return result
