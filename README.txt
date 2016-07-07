@@ -52,4 +52,4 @@ Returns a list of pairs of players for the next round of a match.
 
 Please send any bug reports or feedbacks to
 
-Email: no_junk_email@gmail.com
+Email: no_reply@hello.world
